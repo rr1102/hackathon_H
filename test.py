@@ -11,6 +11,7 @@ class ScreenTimeApp:
     def __init__(self, root):
         self.root = root
         self.root.title("やる木")
+        
 
         self.time_elapsed = 0
         self.last_check = time.time()
@@ -64,6 +65,35 @@ class ScreenTimeApp:
         # デフォルト画像を表示
         self.image_label.config(image=self.images["1"])
 
+
+        # --- スクロール可能なグループラベル領域作成 ---
+        self.group_canvas = tk.Canvas(root, height=100)  # 高さは例、必要に応じて調整
+        self.group_frame = tk.Frame(self.group_canvas)
+
+        self.scrollbar = tk.Scrollbar(root, orient="horizontal", command=self.group_canvas.xview)
+        self.group_canvas.configure(xscrollcommand=self.scrollbar.set)
+
+        self.scrollbar.pack(side="bottom", fill="x")
+        self.group_canvas.pack(side="bottom", fill="x")
+
+        # Canvas内にFrameを配置
+        self.group_canvas.create_window((0, 0), window=self.group_frame, anchor="nw")
+
+        # グループ時間表示用ラベルを group_frame に配置
+        self.group_labels = {
+            'R': tk.Label(self.group_frame, text="R: 00:00:00", font=("Helvetica", 14), fg="red"),
+            'B': tk.Label(self.group_frame, text="B: 00:00:00", font=("Helvetica", 14), fg="blue"),
+            'G': tk.Label(self.group_frame, text="G: 00:00:00", font=("Helvetica", 14), fg="green")
+        }
+        for lbl in self.group_labels.values():
+            lbl.pack(side="left", padx=10)  # 横並びで余白あり
+
+        # Canvasのスクロール領域を更新
+        self.group_frame.bind(
+            "<Configure>",
+            lambda e: self.group_canvas.configure(scrollregion=self.group_canvas.bbox("all"))
+        )
+
         # スタートボタン
         self.start_button = tk.Button(root, text="スタート", command=self.start_timer)
         self.start_button.pack(pady=5)
@@ -84,15 +114,6 @@ class ScreenTimeApp:
 
         # グループ別時間保持
         self.group_times = {'R': 0, 'B': 0, 'G': 0}
-
-        # グループ時間表示用ラベル
-        self.group_labels = {
-            'R': tk.Label(root, text="R: 00:00:00", font=("Helvetica", 14), fg="red"),
-            'B': tk.Label(root, text="B: 00:00:00", font=("Helvetica", 14), fg="blue"),
-            'G': tk.Label(root, text="G: 00:00:00", font=("Helvetica", 14), fg="green")
-        }
-        for lbl in self.group_labels.values():
-            lbl.pack()
 
 
     def start_timer(self):
