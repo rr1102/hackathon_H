@@ -1,7 +1,6 @@
 import tkinter as tk
 import time
 import threading
-# test
 
 class ScreenTimeApp:
     def __init__(self, root):
