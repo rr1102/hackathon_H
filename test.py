@@ -68,9 +68,9 @@ class ScreenTimeApp:
         self.group_canvas.create_window((0, 0), window=self.group_frame, anchor="nw")
 
         self.group_labels = {
-            'R': tk.Label(self.group_frame, text="R: 00:00:00", font=("Helvetica", 14), fg="red"),
-            'B': tk.Label(self.group_frame, text="B: 00:00:00", font=("Helvetica", 14), fg="blue"),
-            'G': tk.Label(self.group_frame, text="G: 00:00:00", font=("Helvetica", 14), fg="green")
+            'R': tk.Label(self.group_frame, text="調べた時間: 00:00:00", font=("Helvetica", 14), fg="red"),
+            'B': tk.Label(self.group_frame, text="まとめた時間: 00:00:00", font=("Helvetica", 14), fg="blue"),
+            'G': tk.Label(self.group_frame, text="分析時間: 00:00:00", font=("Helvetica", 14), fg="green")
         }
         for lbl in self.group_labels.values():
             lbl.pack(side="left", padx=10)
@@ -88,12 +88,22 @@ class ScreenTimeApp:
             'msedge.exe': 'R',
             'zotero.exe': 'R',
             'winword.exe': 'B',
+            'powerpnt.exe': 'B',
             'excel.exe': 'G',
             'code.exe': 'G',
         }
 
         self.group_times = {'R': 0, 'B': 0, 'G': 0}
-        self.apple_positions = [(100, 60), (150, 80), (180, 100), (120, 70), (140, 90), (160, 110), (130, 100), (170, 95), (110, 85)]
+        self.apple_positions = [(149, 178),
+            (275, 106),
+            (111, 65),
+            (240, 157),
+            (182, 212),
+            (290, 51),
+            (208, 88),
+            (129, 236),
+            (171, 62)]
+        self.apple_drawn = []  # Track already drawn apples
 
     def start_timer(self):
         self.started = True
@@ -162,21 +172,22 @@ class ScreenTimeApp:
 
     def display_tree_with_apples(self):
         tree = self.tree_img.copy()
-        used_positions = []
-        positions_pool = self.apple_positions.copy()
-        random.shuffle(positions_pool)
-
-        total_apples = 0
+        positions_pool = [pos for pos in self.apple_positions if pos not in [p[1] for p in self.apple_drawn]]
 
         for group in ['R', 'G', 'B']:
-            count = self.group_times[group] // 30  # 30秒ごと
-            for _ in range(count):
+            count = self.group_times[group] // 30
+            existing = sum(1 for g, _ in self.apple_drawn if g == group)
+            to_add = count - existing
+
+            for _ in range(to_add):
                 if not positions_pool:
                     break
                 pos = positions_pool.pop()
-                apple = self.apple_images[group].copy()
-                tree.alpha_composite(apple, dest=pos)
-                total_apples += 1
+                self.apple_drawn.append((group, pos))
+
+        for group, pos in self.apple_drawn:
+            apple = self.apple_images[group].copy()
+            tree.alpha_composite(apple, dest=pos)
 
         tk_image = ImageTk.PhotoImage(tree)
         self.image_label.config(image=tk_image)
