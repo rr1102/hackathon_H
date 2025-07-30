@@ -28,12 +28,13 @@ class ScreenTimeApp:
         self.stop_button = tk.Button(root, text="ストップ", command=self.stop_timer, state="disabled")
         self.stop_button.pack(pady=5)
 
-        # スレッド開始
+        # タイマー更新スレッド
         self.update_thread = threading.Thread(target=self.update_timer, daemon=True)
         self.update_thread.start()
 
-        # Windows メッセージフック
-        self._setup_power_event_hook()
+        # 電源イベント監視スレッド
+        self.power_thread = threading.Thread(target=self.monitor_power_events, daemon=True)
+        self.power_thread.start()
 
     def start_timer(self):
         self.running = True
@@ -62,22 +63,28 @@ class ScreenTimeApp:
         mins, secs = divmod(rem, 60)
         self.label.config(text=f"{hrs:02}:{mins:02}:{secs:02}")
 
-    def _setup_power_event_hook(self):
-        hwnd = self.root.winfo_id()  # Tkinter ウィンドウハンドル
+    def monitor_power_events(self):
+        # 隠しウィンドウ作成
+        class_name = "HiddenPowerEventWindow"
+        wc = win32gui.WNDCLASS()
+        wc.lpfnWndProc = self._wnd_proc
+        wc.lpszClassName = class_name
+        wc.hInstance = win32api.GetModuleHandle(None)
+        win32gui.RegisterClass(wc)
+        hwnd = win32gui.CreateWindow(class_name, None, 0, 0, 0, 0, 0, 0, 0, wc.hInstance, None)
 
-        # 新しいウィンドウプロシージャ
-        def wnd_proc(hwnd, msg, wparam, lparam):
-            if msg == WM_POWERBROADCAST:
-                if wparam == PBT_APMSUSPEND:
-                    print("スリープ検出: 計測停止")
-                    self.suspended = True
-                elif wparam == PBT_APMRESUMEAUTOMATIC:
-                    print("復帰検出: 計測再開")
-                    self.suspended = False
-            return win32gui.DefWindowProc(hwnd, msg, wparam, lparam)
+        # メッセージループ
+        win32gui.PumpMessages()
 
-        # フックを設定
-        self.old_proc = win32gui.SetWindowLong(hwnd, win32con.GWL_WNDPROC, wnd_proc)
+    def _wnd_proc(self, hwnd, msg, wparam, lparam):
+        if msg == WM_POWERBROADCAST:
+            if wparam == PBT_APMSUSPEND:
+                print("スリープ検出: 計測停止")
+                self.suspended = True
+            elif wparam == PBT_APMRESUMEAUTOMATIC:
+                print("復帰検出: 計測再開")
+                self.suspended = False
+        return win32gui.DefWindowProc(hwnd, msg, wparam, lparam)
 
 if __name__ == "__main__":
     root = tk.Tk()
