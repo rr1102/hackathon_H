@@ -5,7 +5,7 @@ import win32gui
 import win32process
 import psutil
 import os
-from PIL import Image, ImageTk  # Pillowで透明度処理
+from PIL import Image, ImageTk
 
 class ScreenTimeApp:
     def __init__(self, root):
@@ -37,9 +37,13 @@ class ScreenTimeApp:
             "3": tk.PhotoImage(file=os.path.join(img_dir, "3.png"))
         }
 
-        # Pillow用の木とリンゴ画像もロード
+        # Pillow用の木とリンゴ画像をRGBAでロード
         self.tree_img = Image.open(os.path.join(img_dir, "tree.png")).convert("RGBA")
-        self.apple_img = Image.open(os.path.join(img_dir, "apple.png")).convert("RGBA")
+        apple_original = Image.open(os.path.join(img_dir, "apple.png")).convert("RGBA")
+
+        # リンゴ画像を4分の1サイズに縮小
+        w, h = apple_original.size
+        self.apple_img = apple_original.resize((w // 4, h // 4), Image.LANCZOS)
 
         # デフォルト画像を表示
         self.image_label.config(image=self.images["1"])
@@ -107,28 +111,45 @@ class ScreenTimeApp:
         elif self.time_elapsed < 40:
             self.image_label.config(image=self.images["3"])
         else:
-            # 40秒以降は木＋リンゴを表示
+            # 40秒以降は木＋リンゴを表示（最初は両方透明）
             self.display_tree_with_apples()
+            
+    def adjust_image_opacity(img: Image.Image, opacity: float) -> Image.Image:
+    # 画像の透明度を調整（既存の透過は維持しつつ全体をフェード）
+    assert 0.0 <= opacity <= 1.0, "opacity must be between 0 and 1"
+    if img.mode != 'RGBA':
+        img = img.convert('RGBA')
+
+    alpha = img.split()[3]
+    new_alpha = alpha.point(lambda p: int(p * opacity))
+    img.putalpha(new_alpha)
+    return img
+
 
     def display_tree_with_apples(self):
         # 木のコピーを作成
         tree = self.tree_img.copy()
 
-        # リンゴ画像を2つ配置する座標（適当なオフセットを設定）
+        # リンゴを置く座標
         positions = [(50, 50), (150, 80)]
 
-        # 50秒を超えたら1つ目のリンゴを透明化する
+        # 40秒〜50秒の間はリンゴ透明（alpha=0）
+        # 50秒以降、1つ目のリンゴだけ表示（alpha=255）
         for i, pos in enumerate(positions):
             apple = self.apple_img.copy()
-            if self.time_elapsed >= 50 and i == 0:
-                # 完全透明にする
-                apple.putalpha(0)
+            if self.time_elapsed < 50:
+                apple.putalpha(0)  # 完全透明
+            else:
+                if i == 0:
+                    apple.putalpha(255)  # 表示
+                else:
+                    apple.putalpha(0)  # 透明
             tree.alpha_composite(apple, dest=pos)
 
-        # 合成画像をTk用に変換
+        # Tkinter表示用に変換
         tk_image = ImageTk.PhotoImage(tree)
         self.image_label.config(image=tk_image)
-        self.image_label.image = tk_image  # 参照を保持しないとGCされる
+        self.image_label.image = tk_image  # GC対策
 
 if __name__ == "__main__":
     root = tk.Tk()
