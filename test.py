@@ -103,7 +103,6 @@ class ScreenTimeApp:
         self.label.config(text=f"{hrs:02}:{mins:02}:{secs:02}")
 
     def update_image(self):
-        # 経過時間に応じて通常画像またはリンゴ付きの木を表示
         if self.time_elapsed < 10:
             self.image_label.config(image=self.images["1"])
         elif self.time_elapsed < 20:
@@ -111,7 +110,7 @@ class ScreenTimeApp:
         elif self.time_elapsed < 40:
             self.image_label.config(image=self.images["3"])
         else:
-            # 40秒以降は木＋リンゴを表示（最初は両方透明）
+            # 40秒以降は木＋リンゴを表示
             self.display_tree_with_apples()
             
     def adjust_image_opacity(img: Image.Image, opacity: float) -> Image.Image:
@@ -127,29 +126,23 @@ class ScreenTimeApp:
 
 
     def display_tree_with_apples(self):
-        # 木のコピーを作成
         tree = self.tree_img.copy()
 
-        # リンゴを置く座標
+        # リンゴ画像を2つ配置する座標（適当なオフセットを設定）
         positions = [(50, 50), (150, 80)]
 
-        # 40秒〜50秒の間はリンゴ透明（alpha=0）
-        # 50秒以降、1つ目のリンゴだけ表示（alpha=255）
+        # 50秒を超えたら1つ目のリンゴを透明化する
         for i, pos in enumerate(positions):
             apple = self.apple_img.copy()
-            if self.time_elapsed < 50:
-                apple.putalpha(0)  # 完全透明
-            else:
-                if i == 0:
-                    apple.putalpha(255)  # 表示
-                else:
-                    apple.putalpha(0)  # 透明
+            if self.time_elapsed >= 50 and i == 0:
+                # 完全透明にする
+                apple.putalpha(0)
             tree.alpha_composite(apple, dest=pos)
 
-        # Tkinter表示用に変換
+        # 合成画像をTk用に変換
         tk_image = ImageTk.PhotoImage(tree)
         self.image_label.config(image=tk_image)
-        self.image_label.image = tk_image  # GC対策
+        self.image_label.image = tk_image  # 参照を保持しないとGCされる
 
 if __name__ == "__main__":
     root = tk.Tk()
