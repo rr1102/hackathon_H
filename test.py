@@ -124,7 +124,7 @@ class ScreenTimeApp:
                 self.running = True
             else:
                 if self.running:
-                    self.status_label.config(text="停止中", fg="gray")
+                    self.status_label.config(text="中", fg="gray")
                 self.running = False
 
             self.update_label()
