@@ -20,7 +20,7 @@ class ScreenTimeApp:
         self.label = tk.Label(root, text="00:00:00", font=("Helvetica", 32))
         self.label.pack(pady=10)
 
-        self.status_label = tk.Label(root, text="休憩中", font=("Helvetica", 14), fg="gray")
+        self.status_label = tk.Label(root, text="今日も頑張ろうね^^", font=("Helvetica", 14), fg="gray")
         self.status_label.pack()
 
         self.image_label = tk.Label(root)
@@ -45,7 +45,7 @@ class ScreenTimeApp:
 
         self.images["1"] = load_and_align_tree(os.path.join(img_dir, "tree1.png"), 5)
         self.images["2"] = load_and_align_tree(os.path.join(img_dir, "tree2.png"), 8)
-        self.images["3"] = load_and_align_tree(os.path.join(img_dir, "tree3.png"), 10)
+        self.images["3"] = load_and_align_tree(os.path.join(img_dir, "tree3.png"), 8)
 
         self.apple_img = Image.open(os.path.join(img_dir, "apple_red.png")).convert("RGBA")
         self.apple_img = self.apple_img.resize((self.apple_img.width // 20, self.apple_img.height // 20), Image.LANCZOS)
@@ -70,7 +70,7 @@ class ScreenTimeApp:
 
         self.group_frame.bind("<Configure>", lambda e: self.group_canvas.configure(scrollregion=self.group_canvas.bbox("all")))
 
-        self.start_button = tk.Button(root, text="スタート", command=self.start_timer)
+        self.start_button = tk.Button(root, text="START", command=self.start_timer)
         self.start_button.pack(pady=5)
 
         self.update_thread = threading.Thread(target=self.update_timer, daemon=True)
@@ -91,7 +91,7 @@ class ScreenTimeApp:
         self.started = True
         self.last_check = time.time()
         self.start_button.config(state="disabled")
-        self.status_label.config(text="休憩中", fg="gray")
+        self.status_label.config(text="木を成長させよう！", fg="gray")
 
     def get_active_process_name(self):
         try:
@@ -118,13 +118,13 @@ class ScreenTimeApp:
 
             if group:
                 if not self.running:
-                    self.status_label.config(text="カウント中", fg="green")
+                    self.status_label.config(text="木が成長中...", fg="green")
                 self.time_elapsed += elapsed
                 self.group_times[group] += elapsed
                 self.running = True
             else:
                 if self.running:
-                    self.status_label.config(text="中", fg="gray")
+                    self.status_label.config(text="休憩中", fg="gray")
                 self.running = False
 
             self.update_label()
@@ -154,7 +154,7 @@ class ScreenTimeApp:
 
     def display_tree_with_apples(self):
         tree = self.tree_img.copy()
-        positions = [(50, 50), (150, 80)]
+        positions = [(100, 40), (150, 80)]
 
         for i, pos in enumerate(positions):
             apple = self.apple_img.copy()
