@@ -27,8 +27,8 @@ class ScreenTimeApp:
         self.start_button = tk.Button(root, text="スタート", command=self.start_timer)
         self.start_button.pack(pady=5)
 
-        self.stop_button = tk.Button(root, text="ストップ", command=self.stop_timer, state="disabled")
-        self.stop_button.pack(pady=5)
+        # self.stop_button = tk.Button(root, text="ストップ", command=self.stop_timer, state="disabled")
+        # self.stop_button.pack(pady=5)
 
         # タイマー更新スレッド
         self.update_thread = threading.Thread(target=self.update_timer, daemon=True)
@@ -41,12 +41,12 @@ class ScreenTimeApp:
         self.stop_button.config(state="normal")
         self.status_label.config(text="停止中", fg="gray")
 
-    def stop_timer(self):
-        self.started = False
-        self.running = False
-        self.start_button.config(state="normal")
-        self.stop_button.config(state="disabled")
-        self.status_label.config(text="停止中", fg="gray")
+    # def stop_timer(self):
+    #     self.started = False
+    #     self.running = False
+    #     self.start_button.config(state="normal")
+    #     self.stop_button.config(state="disabled")
+    #     self.status_label.config(text="停止中", fg="gray")
 
     def is_browser_active(self):
         try:
