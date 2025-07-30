@@ -99,11 +99,11 @@ class ScreenTimeApp:
         self.label.config(text=f"{hrs:02}:{mins:02}:{secs:02}")
 
     def update_image(self):
-        if self.time_elapsed < 10:
+        if self.time_elapsed < 5:
             self.image_label.config(image=self.images["1"])
-        elif self.time_elapsed < 20:
+        elif self.time_elapsed < 10:
             self.image_label.config(image=self.images["2"])
-        elif self.time_elapsed < 40:
+        elif self.time_elapsed < 15:
             self.image_label.config(image=self.images["3"])
         else:
             self.display_tree_with_apples()
@@ -118,7 +118,7 @@ class ScreenTimeApp:
             # チャンネルを分割
             r, g, b, a = apple.split()
 
-            if self.time_elapsed >= 50 and i == 0:
+            if self.time_elapsed >= 20 and i == 0:
                 # 1つ目のリンゴを表示（元の透過情報を使う）
                 alpha = a
             else:
