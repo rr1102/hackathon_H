@@ -18,6 +18,7 @@ class ScreenTimeApp:
         self.running = False
         self.started = False
 
+        # 時間表示ラベル
         self.label = tk.Label(root, text="00:00:00", font=("Helvetica", 32))
         self.label.pack(pady=10)
 
@@ -87,8 +88,15 @@ class ScreenTimeApp:
 
         self.group_frame.bind("<Configure>", lambda e: self.group_canvas.configure(scrollregion=self.group_canvas.bbox("all")))
 
-        self.start_button = tk.Button(root, text="START", command=self.start_timer)
-        self.start_button.pack(pady=5)
+        # ボタンを横並びにするフレーム
+        self.button_frame = tk.Frame(root)
+        self.button_frame.pack(pady=5)
+
+        self.start_button = tk.Button(self.button_frame, text="START", command=self.start_timer)
+        self.start_button.pack(side="left", padx=5)
+
+        self.reset_button = tk.Button(self.button_frame, text="リセット", command=self.reset_timer)
+        self.reset_button.pack(side="left", padx=5)
 
         self.update_thread = threading.Thread(target=self.update_timer, daemon=True)
         self.update_thread.start()
@@ -115,6 +123,19 @@ class ScreenTimeApp:
         self.last_check = time.time()
         self.start_button.config(state="disabled")
         self.status_label.config(text="木を成長させよう！", fg="gray")
+
+    def reset_timer(self):
+        self.time_elapsed = 0
+        self.group_times = {'R': 0, 'B': 0, 'G': 0}
+        self.apple_drawn = []
+        self.started = False
+        self.running = False
+        self.start_button.config(state="normal")
+        self.status_label.config(text="今日も頑張ろうね^^", fg="gray")
+        self.update_label()
+        self.update_group_labels()
+        self.image_label.config(image=self.images["1"])
+        self.image_label.image = self.images["1"]
 
     def get_active_process_name(self):
         try:
