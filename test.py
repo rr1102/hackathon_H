@@ -40,6 +40,16 @@ class ScreenTimeApp:
         # Pillow用の木とリンゴ画像もロード
         self.tree_img = Image.open(os.path.join(img_dir, "tree.png")).convert("RGBA")
         self.apple_img = Image.open(os.path.join(img_dir, "apple.png")).convert("RGBA")
+        
+        # 木の画像を2倍に拡大（任意の倍率に変更可能）
+        self.tree_img = self.tree_img.resize(
+            (self.tree_img.width * 2, self.tree_img.height * 2), Image.LANCZOS
+        )
+
+        # リンゴもサイズ縮小（8分の1）
+        self.apple_img = self.apple_img.resize(
+            (self.apple_img.width // 8, self.apple_img.height // 8), Image.LANCZOS
+        )
 
         # デフォルト画像を表示
         self.image_label.config(image=self.images["1"])
