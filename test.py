@@ -99,7 +99,6 @@ class ScreenTimeApp:
         self.label.config(text=f"{hrs:02}:{mins:02}:{secs:02}")
 
     def update_image(self):
-        # 経過時間に応じて通常画像またはリンゴ付きの木を表示
         if self.time_elapsed < 10:
             self.image_label.config(image=self.images["1"])
         elif self.time_elapsed < 20:
@@ -107,28 +106,34 @@ class ScreenTimeApp:
         elif self.time_elapsed < 40:
             self.image_label.config(image=self.images["3"])
         else:
-            # 40秒以降は木＋リンゴを表示
             self.display_tree_with_apples()
 
     def display_tree_with_apples(self):
-        # 木のコピーを作成
         tree = self.tree_img.copy()
-
-        # リンゴ画像を2つ配置する座標（適当なオフセットを設定）
         positions = [(50, 50), (150, 80)]
 
-        # 50秒を超えたら1つ目のリンゴを透明化する
         for i, pos in enumerate(positions):
             apple = self.apple_img.copy()
+
+            # チャンネルを分割
+            r, g, b, a = apple.split()
+
             if self.time_elapsed >= 50 and i == 0:
-                # 完全透明にする
-                apple.putalpha(0)
+                # 1つ目のリンゴを表示（元の透過情報を使う）
+                alpha = a
+            else:
+                # その他は完全透明
+                alpha = Image.new("L", apple.size, 0)
+
+            # アルファチャンネルを適用
+            apple.putalpha(alpha)
+
+            # 木にリンゴを合成
             tree.alpha_composite(apple, dest=pos)
 
-        # 合成画像をTk用に変換
         tk_image = ImageTk.PhotoImage(tree)
         self.image_label.config(image=tk_image)
-        self.image_label.image = tk_image  # 参照を保持しないとGCされる
+        self.image_label.image = tk_image  # GC防止用参照保持
 
 if __name__ == "__main__":
     root = tk.Tk()
