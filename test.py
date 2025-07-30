@@ -59,7 +59,7 @@ class ScreenTimeApp:
 
         self.image_label.config(image=self.images["1"])
 
-        self.group_canvas = tk.Canvas(root, height=100)
+        self.group_canvas = tk.Canvas(root, height=120)
         self.group_frame = tk.Frame(self.group_canvas)
         self.scrollbar = tk.Scrollbar(root, orient="horizontal", command=self.group_canvas.xview)
         self.group_canvas.configure(xscrollcommand=self.scrollbar.set)
@@ -67,13 +67,23 @@ class ScreenTimeApp:
         self.group_canvas.pack(side="bottom", fill="x")
         self.group_canvas.create_window((0, 0), window=self.group_frame, anchor="nw")
 
-        self.group_labels = {
-            'R': tk.Label(self.group_frame, text="調べた時間: 00:00:00", font=("Helvetica", 14), fg="red"),
-            'B': tk.Label(self.group_frame, text="まとめた時間: 00:00:00", font=("Helvetica", 14), fg="blue"),
-            'G': tk.Label(self.group_frame, text="分析時間: 00:00:00", font=("Helvetica", 14), fg="green")
+        self.group_titles = {
+            'R': "調べた時間",
+            'B': "まとめた時間",
+            'G': "分析時間"
         }
-        for lbl in self.group_labels.values():
-            lbl.pack(side="left", padx=10)
+
+        self.group_colors = {
+            'R': "red",
+            'B': "blue",
+            'G': "green"
+        }
+
+        self.group_labels = {}
+        for key, title in self.group_titles.items():
+            lbl = tk.Label(self.group_frame, text=f"{title}: 00:00:00", font=("Helvetica", 14), fg=self.group_colors[key])
+            lbl.pack(anchor="w", pady=3)
+            self.group_labels[key] = lbl
 
         self.group_frame.bind("<Configure>", lambda e: self.group_canvas.configure(scrollregion=self.group_canvas.bbox("all")))
 
@@ -94,16 +104,11 @@ class ScreenTimeApp:
         }
 
         self.group_times = {'R': 0, 'B': 0, 'G': 0}
-        self.apple_positions = [(149, 178),
-            (275, 106),
-            (111, 65),
-            (240, 157),
-            (182, 212),
-            (290, 51),
-            (208, 88),
-            (129, 236),
-            (171, 62)]
-        self.apple_drawn = []  # Track already drawn apples
+        self.apple_positions = [
+            (149, 178), (275, 106), (111, 65), (240, 157),
+            (182, 212), (290, 51), (208, 88), (129, 236), (171, 62)
+        ]
+        self.apple_drawn = []
 
     def start_timer(self):
         self.started = True
@@ -153,7 +158,8 @@ class ScreenTimeApp:
         for group, seconds in self.group_times.items():
             hrs, rem = divmod(seconds, 3600)
             mins, secs = divmod(rem, 60)
-            self.group_labels[group].config(text=f"{group}: {hrs:02}:{mins:02}:{secs:02}")
+            title = self.group_titles[group]
+            self.group_labels[group].config(text=f"{title}: {hrs:02}:{mins:02}:{secs:02}")
 
     def update_label(self):
         hrs, rem = divmod(self.time_elapsed, 3600)
