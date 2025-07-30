@@ -60,13 +60,18 @@ class ScreenTimeApp:
 
         self.image_label.config(image=self.images["1"])
 
-        self.group_canvas = tk.Canvas(root, height=120)
+        # 縦スクロールに修正したCanvasとScrollbarの設定
+        self.group_canvas = tk.Canvas(root, width=200)  # 幅は必要に応じて調整してください
         self.group_frame = tk.Frame(self.group_canvas)
-        self.scrollbar = tk.Scrollbar(root, orient="horizontal", command=self.group_canvas.xview)
-        self.group_canvas.configure(xscrollcommand=self.scrollbar.set)
-        self.scrollbar.pack(side="bottom", fill="x")
-        self.group_canvas.pack(side="bottom", fill="x")
+        self.scrollbar = tk.Scrollbar(root, orient="vertical", command=self.group_canvas.yview)
+        self.group_canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        self.scrollbar.pack(side="right", fill="y")
+        self.group_canvas.pack(side="left", fill="both", expand=True)
+
         self.group_canvas.create_window((0, 0), window=self.group_frame, anchor="nw")
+
+        self.group_frame.bind("<Configure>", lambda e: self.group_canvas.configure(scrollregion=self.group_canvas.bbox("all")))
 
         self.group_titles = {
             'R': "調べた時間",
@@ -85,8 +90,6 @@ class ScreenTimeApp:
             lbl = tk.Label(self.group_frame, text=f"{title}: 00:00:00", font=("Helvetica", 14), fg=self.group_colors[key])
             lbl.pack(anchor="w", pady=3)
             self.group_labels[key] = lbl
-
-        self.group_frame.bind("<Configure>", lambda e: self.group_canvas.configure(scrollregion=self.group_canvas.bbox("all")))
 
         # ボタンを横並びにするフレーム
         self.button_frame = tk.Frame(root)
