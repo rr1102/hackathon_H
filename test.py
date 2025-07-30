@@ -5,13 +5,14 @@ import win32gui
 import win32process
 import psutil
 import os
+from PIL import Image, ImageTk  # Pillowで透明度処理
 
 class ScreenTimeApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("スクリーンタイム計測＋画像表示")
+        self.root.title("スクリーンタイム計測＋リンゴの木")
 
-        self.time_elapsed = 0  # 秒数
+        self.time_elapsed = 0
         self.last_check = time.time()
         self.running = False
         self.started = False
@@ -36,7 +37,11 @@ class ScreenTimeApp:
             "3": tk.PhotoImage(file=os.path.join(img_dir, "3.png"))
         }
 
-        # デフォルトで1.pngを表示
+        # Pillow用の木とリンゴ画像もロード
+        self.tree_img = Image.open(os.path.join(img_dir, "tree.png")).convert("RGBA")
+        self.apple_img = Image.open(os.path.join(img_dir, "apple.png")).convert("RGBA")
+
+        # デフォルト画像を表示
         self.image_label.config(image=self.images["1"])
 
         # スタートボタン
@@ -59,7 +64,6 @@ class ScreenTimeApp:
             _, pid = win32process.GetWindowThreadProcessId(hwnd)
             process = psutil.Process(pid)
             name = process.name().lower()
-            # 対象アプリ
             return name in ['chrome.exe', 'msedge.exe', 'winword.exe', 'excel.exe', 'zotero.exe', 'code.exe']
         except Exception:
             return False
@@ -74,7 +78,6 @@ class ScreenTimeApp:
                 continue
 
             active = self.is_browser_active()
-
             if active:
                 if not self.running:
                     self.status_label.config(text="カウント中", fg="green")
@@ -88,7 +91,7 @@ class ScreenTimeApp:
 
             self.last_check = now
             self.update_label()
-            self.update_image()  # 時間ごとに画像を切り替え
+            self.update_image()
 
     def update_label(self):
         hrs, rem = divmod(self.time_elapsed, 3600)
@@ -96,13 +99,36 @@ class ScreenTimeApp:
         self.label.config(text=f"{hrs:02}:{mins:02}:{secs:02}")
 
     def update_image(self):
-        # 経過時間に応じて画像を切り替え
+        # 経過時間に応じて通常画像またはリンゴ付きの木を表示
         if self.time_elapsed < 10:
             self.image_label.config(image=self.images["1"])
         elif self.time_elapsed < 20:
             self.image_label.config(image=self.images["2"])
-        else:
+        elif self.time_elapsed < 40:
             self.image_label.config(image=self.images["3"])
+        else:
+            # 40秒以降は木＋リンゴを表示
+            self.display_tree_with_apples()
+
+    def display_tree_with_apples(self):
+        # 木のコピーを作成
+        tree = self.tree_img.copy()
+
+        # リンゴ画像を2つ配置する座標（適当なオフセットを設定）
+        positions = [(50, 50), (150, 80)]
+
+        # 50秒を超えたら1つ目のリンゴを透明化する
+        for i, pos in enumerate(positions):
+            apple = self.apple_img.copy()
+            if self.time_elapsed >= 50 and i == 0:
+                # 完全透明にする
+                apple.putalpha(0)
+            tree.alpha_composite(apple, dest=pos)
+
+        # 合成画像をTk用に変換
+        tk_image = ImageTk.PhotoImage(tree)
+        self.image_label.config(image=tk_image)
+        self.image_label.image = tk_image  # 参照を保持しないとGCされる
 
 if __name__ == "__main__":
     root = tk.Tk()
