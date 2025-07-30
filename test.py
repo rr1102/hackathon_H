@@ -1,16 +1,13 @@
 import tkinter as tk
 import time
 import threading
-import ctypes
-from ctypes import wintypes
+import win32con
+import win32gui
+import win32api
 
-# Windowsのメッセージ定義
 WM_POWERBROADCAST = 0x0218
-PBT_APMSUSPEND = 0x0004      # スリープへ移行
-PBT_APMRESUMEAUTOMATIC = 0x0012  # 復帰
-
-# ウィンドウプロシージャ型
-WNDPROC = ctypes.WINFUNCTYPE(ctypes.c_long, ctypes.c_int, ctypes.c_uint, ctypes.c_int, ctypes.c_int)
+PBT_APMSUSPEND = 0x0004
+PBT_APMRESUMEAUTOMATIC = 0x0012
 
 class ScreenTimeApp:
     def __init__(self, root):
@@ -19,8 +16,8 @@ class ScreenTimeApp:
 
         self.time_elapsed = 0
         self.running = False
+        self.suspended = False
         self.last_check = time.time()
-        self.suspended = False  # スリープ中かどうか
 
         self.label = tk.Label(root, text="00:00:00", font=("Helvetica", 32))
         self.label.pack(pady=20)
@@ -31,13 +28,12 @@ class ScreenTimeApp:
         self.stop_button = tk.Button(root, text="ストップ", command=self.stop_timer, state="disabled")
         self.stop_button.pack(pady=5)
 
-        # Windowsメッセージフック設定
-        self.old_proc = None
-        self._setup_message_hook()
-
-        # タイマー更新スレッド
+        # スレッド開始
         self.update_thread = threading.Thread(target=self.update_timer, daemon=True)
         self.update_thread.start()
+
+        # Windows メッセージフック
+        self._setup_power_event_hook()
 
     def start_timer(self):
         self.running = True
@@ -64,29 +60,24 @@ class ScreenTimeApp:
     def update_label(self):
         hrs, rem = divmod(self.time_elapsed, 3600)
         mins, secs = divmod(rem, 60)
-        time_str = f"{hrs:02}:{mins:02}:{secs:02}"
-        self.label.config(text=time_str)
+        self.label.config(text=f"{hrs:02}:{mins:02}:{secs:02}")
 
-    def _setup_message_hook(self):
-        # Tkinterウィンドウのハンドルを取得
-        hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
+    def _setup_power_event_hook(self):
+        hwnd = self.root.winfo_id()  # Tkinter ウィンドウハンドル
 
-        # カスタムプロシージャ
-        def winproc(hwnd, msg, wparam, lparam):
+        # 新しいウィンドウプロシージャ
+        def wnd_proc(hwnd, msg, wparam, lparam):
             if msg == WM_POWERBROADCAST:
                 if wparam == PBT_APMSUSPEND:
-                    print("スリープ検出：計測停止")
+                    print("スリープ検出: 計測停止")
                     self.suspended = True
                 elif wparam == PBT_APMRESUMEAUTOMATIC:
-                    print("復帰検出：計測再開")
+                    print("復帰検出: 計測再開")
                     self.suspended = False
-            return ctypes.windll.user32.CallWindowProcW(self.old_proc, hwnd, msg, wparam, lparam)
+            return win32gui.DefWindowProc(hwnd, msg, wparam, lparam)
 
-        # 関数ポインタを作成
-        self.proc = WNDPROC(winproc)
-
-        # 元のウィンドウプロシージャを取得して置き換え
-        self.old_proc = ctypes.windll.user32.SetWindowLongPtrW(hwnd, -4, self.proc)
+        # フックを設定
+        self.old_proc = win32gui.SetWindowLong(hwnd, win32con.GWL_WNDPROC, wnd_proc)
 
 if __name__ == "__main__":
     root = tk.Tk()
