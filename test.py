@@ -22,7 +22,7 @@ class ScreenTimeApp:
         self.label.pack(pady=10)
 
         # ステータス表示
-        self.status_label = tk.Label(root, text="停止中", font=("Helvetica", 14), fg="gray")
+        self.status_label = tk.Label(root, text="休憩中", font=("Helvetica", 14), fg="gray")
         self.status_label.pack()
 
         # 画像表示用ラベル
@@ -56,7 +56,7 @@ class ScreenTimeApp:
             (self.tree_img.width // 40, self.tree_img.height // 40), Image.LANCZOS
         )
 
-        self.apple_img = Image.open(os.path.join(img_dir, "1.png")).convert("RGBA")
+        self.apple_img = Image.open(os.path.join(img_dir, "apple_red.png")).convert("RGBA")
         self.apple_img = self.apple_img.resize(
             (self.apple_img.width // 20, self.apple_img.height // 20), Image.LANCZOS
         )
