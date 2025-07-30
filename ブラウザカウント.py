@@ -32,7 +32,7 @@ class ScreenTimeApp:
             name = process.name().lower()
 
             # Chrome または Edge に限定
-            return name in ['chrome.exe', 'msedge.exe']
+            return name in ['chrome.exe', 'msedge.exe', 'winword.exe', 'excel.exe', 'zotero.exe', 'Code.exe']
         except Exception:
             return False
 
