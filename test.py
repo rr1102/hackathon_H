@@ -5,6 +5,7 @@ import win32gui
 import win32process
 import psutil
 import os
+import random
 from PIL import Image, ImageTk
 
 class ScreenTimeApp:
@@ -47,24 +48,14 @@ class ScreenTimeApp:
         self.images["2"] = load_and_align_tree(os.path.join(img_dir, "tree2.png"), 8)
         self.images["3"] = load_and_align_tree(os.path.join(img_dir, "tree3.png"), 8)
 
-        # リンゴ画像を読み込み
         self.apple_images = {
             'R': Image.open(os.path.join(img_dir, "apple_red.png")).convert("RGBA"),
             'G': Image.open(os.path.join(img_dir, "apple_green.png")).convert("RGBA"),
             'B': Image.open(os.path.join(img_dir, "apple_blue.png")).convert("RGBA")
         }
         for key in self.apple_images:
-            self.apple_images[key] = self.apple_images[key].resize(
-                (self.apple_images[key].width // 20, self.apple_images[key].height // 20), Image.LANCZOS
-            )
-
-        self.apple_positions = [
-            (80, 30), (130, 50), (100, 70),
-            (160, 40), (60, 60), (140, 90),
-            (110, 20), (90, 80), (150, 60)
-        ]
-        self.used_positions = []
-        self.apple_drops = []  # [(group, position)]
+            img = self.apple_images[key]
+            self.apple_images[key] = img.resize((img.width // 20, img.height // 20), Image.LANCZOS)
 
         self.image_label.config(image=self.images["1"])
 
@@ -102,6 +93,7 @@ class ScreenTimeApp:
         }
 
         self.group_times = {'R': 0, 'B': 0, 'G': 0}
+        self.apple_positions = [(100, 60), (150, 80), (180, 100), (120, 70), (140, 90), (160, 110), (130, 100), (170, 95), (110, 85)]
 
     def start_timer(self):
         self.started = True
@@ -143,16 +135,6 @@ class ScreenTimeApp:
                     self.status_label.config(text="休憩中", fg="gray")
                 self.running = False
 
-            # 30秒ごとにリンゴ出現
-            for group_key in ['R', 'G', 'B']:
-                if self.group_times[group_key] >= 30:
-                    if group_key not in [g for g, _ in self.apple_drops]:
-                        unused = [p for p in self.apple_positions if p not in self.used_positions]
-                        if unused:
-                            pos = unused[0]  # random.choice(unused) に変更も可
-                            self.apple_drops.append((group_key, pos))
-                            self.used_positions.append(pos)
-
             self.update_label()
             self.update_group_labels()
             self.update_image()
@@ -180,9 +162,21 @@ class ScreenTimeApp:
 
     def display_tree_with_apples(self):
         tree = self.tree_img.copy()
-        for group, pos in self.apple_drops:
-            apple = self.apple_images[group].copy()
-            tree.alpha_composite(apple, dest=pos)
+        used_positions = []
+        positions_pool = self.apple_positions.copy()
+        random.shuffle(positions_pool)
+
+        total_apples = 0
+
+        for group in ['R', 'G', 'B']:
+            count = self.group_times[group] // 30  # 30秒ごと
+            for _ in range(count):
+                if not positions_pool:
+                    break
+                pos = positions_pool.pop()
+                apple = self.apple_images[group].copy()
+                tree.alpha_composite(apple, dest=pos)
+                total_apples += 1
 
         tk_image = ImageTk.PhotoImage(tree)
         self.image_label.config(image=tk_image)
