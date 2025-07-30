@@ -47,8 +47,24 @@ class ScreenTimeApp:
         self.images["2"] = load_and_align_tree(os.path.join(img_dir, "tree2.png"), 8)
         self.images["3"] = load_and_align_tree(os.path.join(img_dir, "tree3.png"), 8)
 
-        self.apple_img = Image.open(os.path.join(img_dir, "apple_red.png")).convert("RGBA")
-        self.apple_img = self.apple_img.resize((self.apple_img.width // 20, self.apple_img.height // 20), Image.LANCZOS)
+        # リンゴ画像を読み込み
+        self.apple_images = {
+            'R': Image.open(os.path.join(img_dir, "apple_red.png")).convert("RGBA"),
+            'G': Image.open(os.path.join(img_dir, "apple_green.png")).convert("RGBA"),
+            'B': Image.open(os.path.join(img_dir, "apple_blue.png")).convert("RGBA")
+        }
+        for key in self.apple_images:
+            self.apple_images[key] = self.apple_images[key].resize(
+                (self.apple_images[key].width // 20, self.apple_images[key].height // 20), Image.LANCZOS
+            )
+
+        self.apple_positions = [
+            (80, 30), (130, 50), (100, 70),
+            (160, 40), (60, 60), (140, 90),
+            (110, 20), (90, 80), (150, 60)
+        ]
+        self.used_positions = []
+        self.apple_drops = []  # [(group, position)]
 
         self.image_label.config(image=self.images["1"])
 
@@ -127,6 +143,16 @@ class ScreenTimeApp:
                     self.status_label.config(text="休憩中", fg="gray")
                 self.running = False
 
+            # 30秒ごとにリンゴ出現
+            for group_key in ['R', 'G', 'B']:
+                if self.group_times[group_key] >= 30:
+                    if group_key not in [g for g, _ in self.apple_drops]:
+                        unused = [p for p in self.apple_positions if p not in self.used_positions]
+                        if unused:
+                            pos = unused[0]  # random.choice(unused) に変更も可
+                            self.apple_drops.append((group_key, pos))
+                            self.used_positions.append(pos)
+
             self.update_label()
             self.update_group_labels()
             self.update_image()
@@ -154,18 +180,8 @@ class ScreenTimeApp:
 
     def display_tree_with_apples(self):
         tree = self.tree_img.copy()
-        positions = [(100, 40), (150, 80)]
-
-        for i, pos in enumerate(positions):
-            apple = self.apple_img.copy()
-            r, g, b, a = apple.split()
-
-            if self.time_elapsed >= 20 and i == 0:
-                alpha = a
-            else:
-                alpha = Image.new("L", apple.size, 0)
-
-            apple.putalpha(alpha)
+        for group, pos in self.apple_drops:
+            apple = self.apple_images[group].copy()
             tree.alpha_composite(apple, dest=pos)
 
         tk_image = ImageTk.PhotoImage(tree)
